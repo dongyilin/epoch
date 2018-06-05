@@ -80,10 +80,22 @@ calculate_fee(SignedTxs) ->
             TotalFee + Fee
         end, 0, SignedTxs).
 
--spec calculate_total_fee(list(aetx_sign:signed_tx())) -> non_neg_integer().
-calculate_total_fee(SignedTxs) ->
+-spec calculate_gas_fee(aect_call_state_tree:tree()) -> non_neg_integer().
+calculate_gas_fee(Calls) ->
+    aeu_mtrees:iterator_next
+    aeu_mtrees:iterator(C).
+
+case aeu_mtrees:iterator_next(aeu_mtrees:iterator(C)) of
+'$end_of_table' -> none;
+{Next, ?DUMMY_VAL, _Iter} -> sext:decode(Next)
+end.
+
+
+-spec calculate_total_fee(list(aetx_sign:signed_tx()), aect_call_state_tree:tree()) -> non_neg_integer().
+calculate_total_fee(SignedTxs, Calls) ->
     TxsFee = calculate_fee(SignedTxs),
-    aec_governance:block_mine_reward() + TxsFee.
+    GasFee = calculate_gas_fee(Calls),
+    aec_governance:block_mine_reward() + TxsFee + GasFee.
 
 %% -- Internal functions -----------------------------------------------------
 int_create(BlockHash, Block) ->
@@ -157,7 +169,7 @@ int_apply_block_txs(Txs, Miner, Trees, Height, Version, false) ->
     Trees0 = aec_trees:perform_pre_transformations(Trees, Height),
     {ok, Txs1, Trees1} =
         aec_trees:apply_txs_on_state_trees(Txs, Trees0, Height, Version),
-    TotFee = calculate_total_fee(Txs1),
+    TotFee = calculate_total_fee(Txs1, aec_trees:calls(Trees1)),
     Trees2 = aec_trees:grant_fee_to_miner(Miner, Trees1, TotFee),
     {ok, Txs1, Trees2, TotFee};
 %% strict
@@ -165,7 +177,7 @@ int_apply_block_txs(Txs, Miner, Trees, Height, Version, true) ->
     Trees0 = aec_trees:perform_pre_transformations(Trees, Height),
     case aec_trees:apply_txs_on_state_trees_strict(Txs, Trees0, Height, Version) of
         {ok, Txs1, Trees1} ->
-            TotFee = calculate_total_fee(Txs1),
+            TotFee = calculate_total_fee(Txs1, aec_trees:calls(Trees1)),
             Trees2 = aec_trees:grant_fee_to_miner(Miner, Trees1, TotFee),
             {ok, Txs1, Trees2, TotFee};
         Err = {error, _} ->
