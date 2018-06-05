@@ -26,6 +26,9 @@
          enter/3,
          to_list/1]).
 
+%% API - utils outside OTP `gb_trees` module
+-export([fold/3]).
+
 %% API - Merkle tree
 -export([root_hash/1,
          lookup_with_proof/2,
@@ -137,6 +140,16 @@ to_list(Tree) ->
 to_list('$end_of_table', Acc) -> Acc;
 to_list({Key, Val, Iter}, Acc) ->
     to_list(aeu_mp_trees:iterator_next(Iter), [{Key, Val}|Acc]).
+
+%%%===================================================================
+%%% API - utils outside OTP `gb_trees` module
+%%%===================================================================
+
+-spec fold(Fun, Acc0, iterator()) -> Acc1 when
+      Fun = fun((key(), value(), AccIn) -> AccOut),
+      Acc0 = Acc1 = AccIn = AccOut :: term().
+fold(Fun, Acc0, Iter) ->
+    todo.
 
 %%%===================================================================
 %%% API - Merkle tree

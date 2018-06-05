@@ -85,6 +85,7 @@ calculate_gas_fee(Calls) ->
     aeu_mtrees:iterator_next
     aeu_mtrees:iterator(C).
 
+
 case aeu_mtrees:iterator_next(aeu_mtrees:iterator(C)) of
 '$end_of_table' -> none;
 {Next, ?DUMMY_VAL, _Iter} -> sext:decode(Next)
